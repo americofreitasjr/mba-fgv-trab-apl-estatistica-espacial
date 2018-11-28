@@ -1,3 +1,18 @@
+---
+title: "Estatística Espacial"
+date: "6 de outubro de 2018"
+output: html_document
+---
+
+## Trabalho 2
+
+### Descrição das atividades
+
+– Faça uma análise descritiva/exploratória (apresentação do espaço, do fenômeno de interesse, além de investigar os efeitos de 1a e 2a ordem) das localizações das ocorrências dos crimes (para toda a base e somente para o crime rape). Ao realizar a análise discutam a estimação da função de intensidade e a existência do efeito de segunda ordem.  Ajuste o melhor modelo dentro de cada cenário (geral e só o rape) e interprete os resultados.
+
+### Carregando as bibliotecas e bases necessárias
+
+```{r echo=FALSE, results='hide', message=FALSE, warning=FALSE}
 #Carregando o pacote rgdal, maptools e dplyr
 library(rgdal)
 library(maptools)
@@ -5,6 +20,7 @@ library(dplyr)
 library(spatstat)
 library(MASS)
 library(readr)
+
 #Importando o shapefile de Houston
 Mapa_Houston <- readOGR("Houston_City_Limit/Houston_City_Limit.shp")
 
@@ -17,13 +33,23 @@ Base_Houston = read_csv("Base Houston.csv")
 
 #Carregando o pacote spatstat
 library(spatstat)
+```
 
+- Plotando a região de interesse
+
+```{r}
 #Definindo o shapefile como uma janela onde os pontos serao plotados
 #necessario para o uso do pacote spatstat
 Houston <- as.owin(Mapa_Houston)
 
 #Plotando o shapefile
 plot(Houston)
+
+```
+
+- Plotando a ocorrencia de crimes na áre a de interesse
+
+```{r echo=FALSE, results='hide', message=FALSE, warning=FALSE}
 
 #Criando o padrao de pontos a ser plotado
 Houston_ppp = ppp(Base_Houston$lon, Base_Houston$lat, window=Houston)
@@ -32,6 +58,10 @@ Houston_ppp = ppp(Base_Houston$lon, Base_Houston$lat, window=Houston)
 par(mar=c(0.5,0.5,1.5,0.5))
 plot(Houston_ppp, pch=21, cex=0.9, bg="blue", main="Ocorrencias de crimes em Houston")
 
+```
+- Plotando os dados e as funções de intensidades estimadas pelas diversas funções kernel (Quartico, Normal e Epanechnikov)
+
+```{r echo=FALSE, results='hide', message=FALSE, warning=FALSE}
 #Estimando o efeito de primeira ordem (intensidade) usando diferentes kernels
 Houston.q = density.ppp(x = Houston_ppp, sigma=0.05, kernel="quartic")
 Houston.g = density.ppp(x = Houston_ppp, sigma=0.05, kernel="gaussian")
@@ -55,7 +85,13 @@ plot(Houston.g, main="Kernel Normal")
 plot(Houston.e, main="Kernel Epanechnikov")
 par(mfrow=c(1,1))
 
+```
 
+## Analisando Efeitos de Primeira Ordem
+
+### Estimando o Raio
+
+```{r echo=FALSE, results='hide', message=FALSE, warning=FALSE}
 #-------------------------------------------------------------------------------
 #------------------------FUNÇÃO DE PRMEIRA ORDEM--------------------------------
 #-------------------------------------------------------------------------------
@@ -64,6 +100,12 @@ par(mfrow=c(1,1))
 raio.est = bw.diggle(Houston_ppp)
 raio.est
 plot (raio.est)
+
+```
+
+### Plotando o mapa com o raio estimado e kernel Gaussian
+
+```{r echo=FALSE, results='hide', message=FALSE, warning=FALSE}
 
 #Plotaremos o mapa com o raio estimado e Kernel Gaussian, esse Estimador é um método
 # de interpolação que mede a intensidade de ocorrências do processo em toda
@@ -75,7 +117,14 @@ plot(density.ppp(Houston_ppp, sigma=raio.est, kernel="gaussian"), main="Kernel G
 #determinados pontos do mapa. Para confirmarmos ou não esse sentimento ainda teremos
 #que realizar mais análizes.
 
+```
 
+## Analisando efeitos de segunda ordem
+
+### Teste de completa aleatoriedade espacial (CSR)
+
+#### Método da quadratura
+```{r}
 #---------------------------------------------------------------------------------
 #--------------------------FUNÇÃO DE SEGUNDA ORDEM--------------------------------
 #---------------------------------------------------------------------------------
@@ -106,6 +155,12 @@ cont
 par(mar=c(0.5,0.5,1.5,1))
 plot(cont, main="Teste CSR com Método da Quadratura")
 
+```
+
+#### Método qui-quadrado
+
+```{r}
+
 ##quadrat.test - realiza um teste de qui-quadrado para testar completa aleatoriedade 
 #espacial
 teste = quadrat.test(X = Houston_ppp, nx = 3, ny = 4)
@@ -120,6 +175,11 @@ teste
 #Plotando o teste
 plot(teste, main="Teste CSR com Método Qui-quadrado")
 
+```
+
+### Testes de hipoteses Clarkevans e Hospkel
+
+```{r}
 #------------------Testes de hipoteses Clarkevans e Hospkel-------------------------
 clarkevans.test(Houston_ppp)
 
@@ -129,6 +189,11 @@ hopskel.test(Houston_ppp, alternative="clustered")
 #de 0.05. Os testes sugerem que podemos rejeitar a hipótese nula 
 #de completa aleatoriedade espacial. 
 
+```
+
+### Funções K, G e F
+
+```{r}
 
 #-------------------------------FUNÇÕES K,G e F-----------------------------------
 
@@ -166,6 +231,13 @@ par(mfrow = c(1,2))
 # Na Função F a curva estimada está abaixo da curva de Poisson, na qual também indica 
 # agrupameto
 
+```
+
+### Envelopamento
+
+#### Função Gest
+
+```{r}
 #------------------------------------Envelopamento----------------------------
 
 #envelopado
@@ -173,6 +245,11 @@ Houston_envelop_G = envelope(Houston_ppp,fun = Gest, nsim=20)
 plot(Houston_envelop_G)
 #A curva estimada está fora do envelope, indicando agrupamento
 
+```
+
+#### Função Fest
+
+```{r}
 Houston_envelop_F = envelope(Houston_ppp,fun = Fest, nsim=20)
 plot(Houston_envelop_F)
 #A curva estimada está fora do envelope, indicando agrupamento
@@ -180,6 +257,11 @@ plot(Houston_envelop_F)
 #Houston_envelop_K = envelope(Houston_ppp,fun = Kest, nsim=20) #(alto custo computacional)
 #plot(Houston_envelop)
 
+```
+
+### Ajuste 1 -  Ajustando o processo de Poisson homogeneo
+
+```{r}
 
 #-------------------------------------------------------------------------------------#
 # ------------------ Ajustando o processo de Poisson homogeneo----------------------#
@@ -200,6 +282,13 @@ ajuste1
 
 #o modelo basicamente nos diz (Ztest)que as variaveis X e Y são relevantes(***)
 
+```
+
+### Ajuste 2 - Ajustando o processo de Poisson não-homogeneo
+
+#### Plotando a função de intensidade ajustada em função das coordenadas x e y, e o erro padrão da função de intensidade ajustada pelo modelo
+
+```{r}
 
 
 #-------------------------------------------------------------------------------------#
@@ -214,9 +303,14 @@ ajuste2
 #Plotando a funcao de intensidade ajustada em funcao das coordenadas x e y
 par(mar=c(1.5,1.5,1.5,1))
 plot(ajuste2, how = "image", se = FALSE, pause = FALSE, axes = TRUE, main="Função de Intensidade Ajustada")
-
 #Plotando o erro padrao da funcao de intensidade ajustada pelo modelo
 plot(ajuste2, how = "image", se = TRUE, pause = FALSE, main="Erro Padrão da Função de Intensidade Ajustada")
+
+```
+
+#### Calculando o efeito de uma unica variavel no modelo
+
+```{r}
 
 #Calculando o efeito de uma unica variavel no modelo
 efeito.1vari = effectfun(model = ajuste2, covname = "x", y = 40.7)
@@ -230,6 +324,12 @@ plot(efeito.1vari , main = "Efeito de uma única variável")
 #model - modelo ajustado
 #covname - nome da variavel que quer avaliar o efeito
 #y - foi preciso colocar um valor de y, pois estamos desejando ver o efeito em x
+
+```
+
+### Ajuste 3 - Ajustando um processo de Poisson não-homogeneo com covariaveis diferentes de coordenadas
+
+```{r}
 
 #--------------------------------------------------------------------------------------------#
 #Ajustando um processo de Poisson nao-homogeneo com covariaveis diferentes de coordenadas  #
@@ -288,6 +388,11 @@ RR
 #Há um aumento no risco quando comparado a região s_1 e a região s_2 em torno 
 #de 99%.
 
+```
+
+### Comparando os ajustes 1,2 e 3
+
+```{r}
 #Como escolher o melhor modelo
 AIC(ajuste1)
 AIC(ajuste2)
@@ -296,9 +401,17 @@ AIC(ajuste3)
 #Funcao que automatiza a selecao dos modelos
 stepAIC(ajuste1)
 
+```
+
+### Ajuste final
+
+```{r}
+
 #O Criterio AIC indica o modelo que contem as coordenadas x e y e a variavel numero 
 #de armas registradas
 ajuste.final = ppm(Q = Houston_ppp ~ x + y+ A, covariates = data.frame(A=Armas))
 
 ajuste.final
+
+```
 

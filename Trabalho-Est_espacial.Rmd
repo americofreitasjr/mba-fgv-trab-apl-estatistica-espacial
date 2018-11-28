@@ -1,6 +1,6 @@
 ---
 title: "Estatística Espacial"
-date: "6 de outubro de 2018"
+date: "28 de novembro de 2018"
 output: html_document
 ---
 

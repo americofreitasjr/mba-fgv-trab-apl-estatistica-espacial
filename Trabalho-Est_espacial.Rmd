@@ -173,7 +173,7 @@ par(mfrow=c(1,2))
 par(mar=c(0.5,0.5,4.5,1))
 
 plot(density.ppp(Houston_ppp, sigma=raio.est, kernel="gaussian"), main="Sigma=0.002992444 ", cex.main=0.002)
-plot(density.ppp(Houston_Rape_ppp, sigma=raio_Rape.est, kernel="gaussian"), main="Sigma=0.002992444 (Rape) ",cex.main=0.002)
+plot(density.ppp(Houston_Rape_ppp, sigma=raio_Rape.est, kernel="gaussian"), main="Sigma=0.010169672 (Rape) ",cex.main=0.010)
 
 mtext("Kernel Gaussiano", outer=TRUE ,side = 3,line=-2, cex = 1.4)
 par(mfrow=c(1,1))
@@ -221,7 +221,7 @@ par(mfrow=c(1,2))
 par(mar=c(0.5,0.5,4.5,1))
 plot(cont, main="All")
 plot(cont_Rape, main="Rape")
-mtext("Teste CSR com Método da Quadratura", outer=TRUE ,side = 3,line=-2, cex = 1.4)
+mtext("Teste CSR com Método da Quadratura", outer=TRUE ,side = 3,line=-1, cex = 1.4)
 par(mfrow=c(1,1))
 
 ```
@@ -250,7 +250,7 @@ par(mfrow=c(1,2))
 par(mar=c(0.5,0.5,4.5,1))
 plot(teste, main="All")
 plot(teste_Rape, main="Rape")
-mtext("Teste CSR com Método Qui-quadrado", outer=TRUE ,side = 3,line=-2, cex = 1.4)
+mtext("Teste CSR com Método Qui-quadrado", outer=TRUE ,side = 3,line=-1, cex = 1.4)
 par(mfrow=c(1,1))
 ```
 

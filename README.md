@@ -9,6 +9,6 @@ Rio de Janeiro, 28 de Novembro de 2018.
 
 ### Autores
 - Americo Freitas
-- Irani
+- Irani Barbosa Junior
 - Matheus Motta
 - Shirlei Alexandrino

@@ -35,6 +35,7 @@ library(readr)
 #Importando o arquivo com as localizações ocorrências de crimes na cidade de Houston.
 
 Base_Houston = read_csv("Base Houston.csv")
+Base_Houston_Rape = Base_Houston[Base_Houston$offense=="rape",]
 
 #Carregando o pacote spatstat
 library(spatstat)
@@ -65,10 +66,16 @@ plot(Houston)
 
 #Criando o padrao de pontos a ser plotado
 Houston_ppp = ppp(Base_Houston$lon, Base_Houston$lat, window=Houston)
+Houston_Rape_ppp = ppp(Base_Houston_Rape$lon, Base_Houston_Rape$lat, window=Houston)
 
+par(mfrow=c(1,2))
+par(mar=c(0.5,0.5,4.5,1))
 #Plotando as localizacoes dos delitos
-par(mar=c(0.5,0.5,1.5,0.5))
-plot(Houston_ppp, pch=21, cex=0.9, bg="blue", main="Ocorrencias de crimes em Houston")
+plot(Houston_ppp, pch=21, cex=0.9, bg="blue", main="All")
+plot(Houston_Rape_ppp, pch=21, cex=0.9, bg="blue", main="Rape")
+mtext("Ocorrencias de crimes em Houston", outer=TRUE ,side = 3,line=-1, cex = 1.4)
+par(mfrow=c(1,1))
+
 
 ```
 
@@ -84,23 +91,49 @@ Ao analizar a imagem acima, observamos a localidade de cada ocorrencia plotada n
 Houston.q = density.ppp(x = Houston_ppp, sigma=0.05, kernel="quartic")
 Houston.g = density.ppp(x = Houston_ppp, sigma=0.05, kernel="gaussian")
 Houston.e = density.ppp(x = Houston_ppp, sigma=0.05, kernel="epanechnikov")
- 
+
 ##density.ppp - calcula a funcao de intensidade de acordo com o kernel escolhido
 #Argumentos:
 #x - objeto da classe ppp
 #sigma - é o valor do raio (tau na expressao dos slides)
 #kernel - o kernel que deseja-se usar
 
-
 #-------------------------APRESENTAÇÃO DO ESPAÇO------------------------------------
-
 
 #Plotando os dados e as funcoes intensidades estimadas pelas diversas funcoes kernel
 par(mfrow=c(2,2))
+par(mar=c(0.5,0.5,4.5,1))
 plot(Houston_ppp, pch=21, cex=0.9, bg="blue", main="Ocorrencias", cex.main=0.5)
 plot(Houston.q, main="Kernel Quartico", cex.main=0.5)
 plot(Houston.g, main="Kernel Normal")
 plot(Houston.e, main="Kernel Epanechnikov")
+mtext("Kernels", outer=TRUE ,side = 3,line=-2, cex = 1.4)
+
+```
+
+```{r message=FALSE, warning=FALSE}
+
+#Estimando o efeito de primeira ordem (intensidade) usando diferentes kernels
+Houston_Rape.q = density.ppp(x = Houston_Rape_ppp, sigma=0.05, kernel="quartic")
+Houston_Rape.g = density.ppp(x = Houston_Rape_ppp, sigma=0.05, kernel="gaussian")
+Houston_Rape.e = density.ppp(x = Houston_Rape_ppp, sigma=0.05, kernel="epanechnikov")
+
+##density.ppp - calcula a funcao de intensidade de acordo com o kernel escolhido
+#Argumentos:
+#x - objeto da classe ppp
+#sigma - é o valor do raio (tau na expressao dos slides)
+#kernel - o kernel que deseja-se usar
+
+#-------------------------APRESENTAÇÃO DO ESPAÇO------------------------------------
+
+par(mfrow=c(2,2))
+par(mar=c(0.5,0.5,4.5,1))
+plot(Houston_Rape_ppp, pch=21, cex=0.9, bg="blue", main="Ocorrencias (Rape)", cex.main=0.5)
+plot(Houston_Rape.q, main="Kernel Quartico (Rape)", cex.main=0.5)
+plot(Houston_Rape.g, main="Kernel Normal (Rape)")
+plot(Houston_Rape.e, main="Kernel Epanechnikov (Rape)")
+mtext("Kernels (Rape)", outer=TRUE ,side = 3,line=-2, cex = 1.4)
+
 par(mfrow=c(1,1))
 
 ```
@@ -114,10 +147,17 @@ par(mfrow=c(1,1))
 #------------------------FUNÇÃO DE PRMEIRA ORDEM--------------------------------
 #-------------------------------------------------------------------------------
 
+par(mfrow=c(1,2))
+
 #Funcao que estima o raio por meio de validacao cruzada 
 raio.est = bw.diggle(Houston_ppp)
-raio.est
-plot (raio.est)
+plot(raio.est, main= paste("Raio ",raio.est, sep=" "))
+
+#Funcao que estima o raio por meio de validacao cruzada 
+raio_Rape.est = bw.diggle(Houston_Rape_ppp)
+plot(raio_Rape.est, main= paste("Raio (Rape)",raio_Rape.est, sep=" "))
+
+par(mfrow=c(1,1))
 
 ```
 
@@ -129,8 +169,14 @@ Como entendemos que o raio escolhido exerce grande influência no resultado da i
 
 
 ```{r message=FALSE, warning=FALSE}
+par(mfrow=c(1,2))
+par(mar=c(0.5,0.5,4.5,1))
 
-plot(density.ppp(Houston_ppp, sigma=raio.est, kernel="gaussian"), main="Kernel Gaussiano com Sigma=0.002992444 ", cex.main=0.002)
+plot(density.ppp(Houston_ppp, sigma=raio.est, kernel="gaussian"), main="Sigma=0.002992444 ", cex.main=0.002)
+plot(density.ppp(Houston_Rape_ppp, sigma=raio_Rape.est, kernel="gaussian"), main="Sigma=0.002992444 (Rape) ",cex.main=0.002)
+
+mtext("Kernel Gaussiano", outer=TRUE ,side = 3,line=-2, cex = 1.4)
+par(mfrow=c(1,1))
 
 ```
 
@@ -158,6 +204,8 @@ Após observarmos os padrões dos pontos na Função de primeira ordem, denotare
 #Método da quadratura
 cont = quadratcount(X = Houston_ppp, nx = 5, ny = 5)
 
+cont_Rape = quadratcount(X = Houston_Rape_ppp, nx = 5, ny = 5)
+
 ##quadratcount - dividi uma janela em retangulos e conta o numero de pontos em cada
 #um deles
 #Argumentos:
@@ -166,11 +214,15 @@ cont = quadratcount(X = Houston_ppp, nx = 5, ny = 5)
 #nx - numero de particoes no eixo y
 
 #Visualizando as contagens em cada celula
-cont
+#cont
 
 #Plotando as contagens
-par(mar=c(0.5,0.5,1.5,1))
-plot(cont, main="Teste CSR com Método da Quadratura")
+par(mfrow=c(1,2))
+par(mar=c(0.5,0.5,4.5,1))
+plot(cont, main="All")
+plot(cont_Rape, main="Rape")
+mtext("Teste CSR com Método da Quadratura", outer=TRUE ,side = 3,line=-2, cex = 1.4)
+par(mfrow=c(1,1))
 
 ```
 
@@ -183,17 +235,23 @@ plot(cont, main="Teste CSR com Método da Quadratura")
 ##quadrat.test - realiza um teste de qui-quadrado para testar completa aleatoriedade 
 #espacial
 teste = quadrat.test(X = Houston_ppp, nx = 3, ny = 4)
+
+teste_Rape = quadrat.test(X = Houston_Rape_ppp, nx = 3, ny = 4)
 #Argumentos:
 #X - objeto do tipo ppp
 #nx - numero de particoes no eixo x
 #nx - numero de particoes no eixo y
 
 #Visualizando o resultado do teste
-teste
+#teste
 
 #Plotando o teste
-plot(teste, main="Teste CSR com Método Qui-quadrado")
-
+par(mfrow=c(1,2))
+par(mar=c(0.5,0.5,4.5,1))
+plot(teste, main="All")
+plot(teste_Rape, main="Rape")
+mtext("Teste CSR com Método Qui-quadrado", outer=TRUE ,side = 3,line=-2, cex = 1.4)
+par(mfrow=c(1,1))
 ```
 
 
@@ -203,8 +261,10 @@ plot(teste, main="Teste CSR com Método Qui-quadrado")
 ```{r}
 #------------------Testes de hipoteses Clarkevans e Hospkel-------------------------
 clarkevans.test(Houston_ppp)
-
 hopskel.test(Houston_ppp, alternative="clustered")
+
+clarkevans.test(Houston_Rape_ppp)
+hopskel.test(Houston_Rape_ppp, alternative="clustered")
 
 ```
 
@@ -224,31 +284,30 @@ Como rejeitamos a hipótese nula de completa aleatoriedade espacial, iremos util
 
 #Estimando a funcao G
 Houston.G = Gest(Houston_ppp)
-
-#Gest - estima a funcao de distribuicao G de um padrao de pontos
-#Argumento
-#X - um objeto da classe ppp
-
 #Estimando a funcao K (alto custo computacional)
 #Houston.K = Kest(Houston_ppp)
-
-#Kest - estima a funcao K de Ripley de um padrao de pontos
-#Argumento
-#X - um objeto da classe ppp
-
 #Estimando a funcao F
 Houston.F = Fest(Houston_ppp)
 
-#Fest - estima a funcao F de um padrao de pontos
-#Argumento
-#X - um objeto da classe ppp
+#Estimando a funcao G
+Houston_Rape.G = Gest(Houston_Rape_ppp)
+#Estimando a funcao K (alto custo computacional)
+#Houston_Rape.K = Kest(Houston_Rape_ppp)
+#Estimando a funcao F
+Houston_Rape.F = Fest(Houston_Rape_ppp)
+
 
 #Plotando as funcoes G, K e F
-par(mfrow = c(1,2))
+par(mfrow = c(2,2))
 par(mar=c(2.5,2.5,1.5,.5))
+
 plot(Houston.G, main="Funcao G")
 #plot(Houston.K, main="Funcao K")
 plot(Houston.F, main="Funcao F")
+
+plot(Houston_Rape.G, main="Funcao G (Rape)")
+#plot(Houston_Rape.K, main="Funcao K (Rape)")
+plot(Houston_Rape.F, main="Funcao F (Rape)")
 
 ```
 
@@ -263,20 +322,31 @@ plot(Houston.F, main="Funcao F")
 ```{r message=FALSE, warning=FALSE}
 #------------------------------------Envelopamento----------------------------
 
-par(mfrow = c(1,2))
-par(mar=c(2.5,2.5,1.5,.5))
-
 #envelopado
 Houston_envelop_G = envelope(Houston_ppp,fun = Gest, nsim=20)
-plot(Houston_envelop_G)
-#A curva estimada está fora do envelope, indicando agrupamento
-
 #Houston_envelop_K = envelope(Houston_ppp,fun = Kest, nsim=20) #(alto custo computacional)
-#plot(Houston_envelop_k)
-
 Houston_envelop_F = envelope(Houston_ppp,fun = Fest, nsim=20)
-plot(Houston_envelop_F)
+
+Houston_Rape_envelop_G = envelope(Houston_Rape_ppp,fun = Gest, nsim=20)
+#Houston_Rape_envelop_K = envelope(Houston_Rape_ppp,fun = Kest, nsim=20) #(alto custo computacional)
+Houston_Rape_envelop_F = envelope(Houston_Rape_ppp,fun = Fest, nsim=20)
+
+
+par(mfrow = c(2,2))
+par(mar=c(2.5,2.5,1.5,.5))
+
+plot(Houston_envelop_G, main="G - All")
 #A curva estimada está fora do envelope, indicando agrupamento
+#plot(Houston_envelop_k, main="K - All")
+plot(Houston_envelop_F, main="F - All")
+#A curva estimada está fora do envelope, indicando agrupamento
+
+plot(Houston_Rape_envelop_G, main="G - Rape")
+#A curva estimada está fora do envelope, indicando agrupamento
+#plot(Houston_Rape_envelop_k, main="K - Rape")
+plot(Houston_Rape_envelop_F,main="F - Rape")
+#A curva estimada está fora do envelope, indicando agrupamento
+
 
 ```
 
@@ -301,12 +371,16 @@ plot(Houston_envelop_F)
 #Ajustando o processo de Poisson homogeneo
 ajuste1 = ppm(Q = Houston_ppp ~ 1)
 
+ajuste1_Rape = ppm(Q = Houston_Rape_ppp ~ 1)
+
 ##ppm - Ajusta o processo de Poisson
 #Argumentos:
 #Q - Objeto ppp ~ 1 (ajusta o homogêneo)
 
 #Visualizando o modelo ajustado
 ajuste1
+
+ajuste1_Rape
 
 
 
@@ -334,11 +408,26 @@ ajuste2 = ppm(Q = Houston_ppp ~ x + y)
 
 #Visualizando o modelo ajustado
 ajuste2
+
+
+ajuste2_Rape = ppm(Q = Houston_Rape_ppp ~ x + y)
+
+#Visualizando o modelo ajustado
+ajuste2_Rape
+
+
 #Plotando a funcao de intensidade ajustada em funcao das coordenadas x e y
+par(mfrow=c(2,2))
 par(mar=c(1.5,1.5,1.5,1))
-plot(ajuste2, how = "image", se = FALSE, pause = FALSE, axes = TRUE, main="Função de Intensidade Ajustada")
+
+plot(ajuste2, how = "image", se = FALSE, pause = FALSE, axes = TRUE, main="Função de Intensidade Ajustada") 
 #Plotando o erro padrao da funcao de intensidade ajustada pelo modelo
 plot(ajuste2, how = "image", se = TRUE, pause = FALSE, main="Erro Padrão da Função de Intensidade Ajustada")
+
+plot(ajuste2_Rape, how = "image", se = FALSE, pause = FALSE, axes = TRUE, main="Função de Intensidade Ajustada (Rape)") 
+#Plotando o erro padrao da funcao de intensidade ajustada pelo modelo
+plot(ajuste2_Rape, how = "image", se = TRUE, pause = FALSE, main="Erro Padrão da Função de Intensidade Ajustada (Rape)")
+
 
 ```
 
@@ -350,10 +439,17 @@ plot(ajuste2, how = "image", se = TRUE, pause = FALSE, main="Erro Padrão da Fun
 
 #Calculando o efeito de uma unica variavel no modelo
 efeito.1vari = effectfun(model = ajuste2, covname = "x", y = 40.7)
+efeito_Rape.1vari = effectfun(model = ajuste2_Rape, covname = "x", y = 40.7)
 
 #Plotando o efeito de uma unica covariavel no modelo
+par(mfrow=c(1,2))
 par(mar=c(2,2,2,1))
-plot(efeito.1vari , main = "Efeito de uma única variável")
+
+plot(efeito.1vari , main = "All")
+plot(efeito_Rape.1vari , main = "Rape")
+
+mtext("Efeito de uma única variável", outer=TRUE ,side = 3,line=-2, cex = 1.4)
+par(mfrow=c(1,1))
 
 ##effectfun - realiza um teste de qui-quadrado para testar completa aleatoriedade espacial
 #Argumentos:
@@ -368,7 +464,7 @@ plot(efeito.1vari , main = "Efeito de uma única variável")
 
 
 ```{r}
-
+#----------------------------------------All----------------------------------------------#
 #--------------------------------------------------------------------------------------------#
 #Ajustando um processo de Poisson nao-homogeneo com covariaveis diferentes de coordenadas  #
 #--------------------------------------------------------------------------------------------#
@@ -378,6 +474,7 @@ particao <- quadscheme(Houston_ppp)
 
 #Visualizando o obejto da classe quad
 par(mar=c(0.5,0.5,1.5,0.5))
+
 plot(particao)
 
 #Extraindo as coordenadas do grid criado
@@ -426,6 +523,67 @@ RR
 #Há um aumento no risco quando comparado a região s_1 e a região s_2 em torno 
 #de 99%.
 
+
+
+#----------------------------------------Rape----------------------------------------------#
+#--------------------------------------------------------------------------------------------#
+#Ajustando um processo de Poisson nao-homogeneo com covariaveis diferentes de coordenadas  #
+#--------------------------------------------------------------------------------------------#
+
+#Gera um objeto da classe quad
+particao_Rape <- quadscheme(Houston_Rape_ppp)
+
+#Visualizando o obejto da classe quad
+par(mar=c(0.5,0.5,1.5,0.5))
+
+plot(particao_Rape)
+
+#Extraindo as coordenadas do grid criado
+x_Rape.par <- x.quad(particao_Rape)
+y_Rape.par <- y.quad(particao_Rape)
+
+#Visualizando as coordenadas
+x_Rape.par[1:5]
+y_Rape.par[1:5]
+
+#Importando os dados complementares (observados nos pontos do grid)
+#Estou assumindo que os dados se encontram na ordenacao das coordenadas de x.par e y.par
+base_Rape.comp = read_csv("complementares rape.csv")
+Delegacia_Rape = base_Rape.comp$delegacia #Se ha delegacias próximas aos delitos
+Investimento_Rape = base_Rape.comp$investimento #investimento empregue naquela regiao
+Armas_Rape= base_Rape.comp$armas #Armas registradas
+
+#Ajustando um processo de Poisson nao-homogeneo que e log-linear nas coordenadas cartesianas e 
+#considera as covariaveis numero de armas apreebdidas no mes passado e se houve blitz policial no ultimo mes
+ajuste3_Rape = ppm(Q = Houston_Rape_ppp ~ x + y + D + I  , covariates = data.frame(D = Delegacia_Rape, I = Investimento_Rape))
+
+#Visualizando o modelo ajustado
+ajuste3_Rape
+#Aparentemente as duas variaveis adicionais, não são significativas nesse modelo.
+
+#Calculando o risco relativo s_1 versus s_2
+
+#s_1
+x_Rape.par[100]
+y_Rape.par[100]
+
+#s_2
+x_Rape.par[500]
+y_Rape.par[500]
+
+plot(Houston_Rape_ppp, pch=21, cex=0.3, bg="blue", main="Risco Relativo s_1 x s_2 (Rape)")
+points(x_Rape.par[100],y_Rape.par[100],col="green", cex=3.9)
+points(x_Rape.par[700],y_Rape.par[700],col="red", cex=3.9)
+
+RR_Rape.num = (-127.30 + 3.54 * x_Rape.par[100] + 4.96 * y_Rape.par[100] + 0.02 * Delegacia_Rape[100] + 0.35 * Investimento_Rape[100])
+RR_Rape.den = (-127.30 + 3.54 * x_Rape.par[700] + 4.96 * y_Rape.par[700] + 0.02 * Delegacia_Rape[700] + 0.35 * Investimento_Rape[700])
+
+RR_Rape = RR_Rape.num/RR_Rape.den
+
+RR_Rape
+#Há um aumento no risco quando comparado a região s_1 e a região s_2 em torno 
+#de 99%.
+
 ```
 
 
@@ -433,10 +591,15 @@ RR
 
 
 ```{r}
+
 #Como escolher o melhor modelo
 AIC(ajuste1)
 AIC(ajuste2)
 AIC(ajuste3)
+
+AIC(ajuste1_Rape)
+AIC(ajuste2_Rape)
+AIC(ajuste3_Rape)
 
 ```
 
@@ -451,6 +614,8 @@ O modelo preferido é aquele com menor AIC = ajuste1
 
 stepAIC(ajuste1)
 
+stepAIC(ajuste1_Rape)
+
 ```
 
 
@@ -464,6 +629,9 @@ O Criterio AIC indica o modelo que contem as coordenadas x e y e a variavel nume
 
 ajuste.final = ppm(Q = Houston_ppp ~ x + y+ A, covariates = data.frame(A=Armas))
 ajuste.final
+
+ajuste_Rape.final = ppm(Q = Houston_Rape_ppp ~ x + y+ A, covariates = data.frame(A=Armas_Rape))
+ajuste_Rape.final
 
 ```
 
